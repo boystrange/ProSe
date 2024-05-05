@@ -1,0 +1,18 @@
+
+type StackP = &{ push : StackP
+     	       , pop  : ⊕{ more : StackP
+	       	      	  , stop : 1 } }
+type StackC = ⊕{ push : StackC
+     	       , pop : &{ yes : StackC, no : ⊥ } }
+
+Some(x : StackP, y : StackC) =
+  case x {
+    push : y[push].Some⟨x,y⟩
+    pop  : y[pop].case y { more : Some⟨x,y⟩, none : wait y.None⟨x⟩ }
+  }
+
+None(x : StackP) =
+  case x {
+    push : new (y : StackP) None⟨y⟩ in Some⟨x,y⟩,
+    pop  : x[stop].close x
+  }

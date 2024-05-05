@@ -1,0 +1,6 @@
+type T = ⊕{ a : T, b : 1 }
+type S = &{ a : S, b : ⊥ }
+
+Client(x : T) = x[a].Client⟨x⟩ ⊕ x[b].close x
+Server(x : S, y : 1) = case x { a : Server⟨x,y⟩, b : wait x.close y }
+Main(y : 1) = new (x : S) Server⟨x,y⟩ in Client⟨x⟩

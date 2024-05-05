@@ -1,0 +1,15 @@
+type S = &{ a : S, b : 1 }
+type T = ⊕{ a : T, b : ⊥ }
+
+B1(x : S) = case x { a : B1⟨x⟩, b : close x }
+B2(x : S) = case x { a : B2⟨x⟩
+       	    	   , b : new (y : 1) close y in
+		       	 wait y.close x }
+B3(x : S) = case x { a : new (y : 1) close y in wait y.B3⟨x⟩
+       	    	   , b : close x}
+
+Client(x : T, y : 1) = x[a].x[a].x[a].x[b].wait x.close y
+
+Main1(y : 1) = new (x : S) B1⟨x⟩ in Client⟨x,y⟩
+Main2(y : 1) = new (x : S) B2⟨x⟩ in Client⟨x,y⟩
+Main3(y : 1) = new (x : S) B3⟨x⟩ in Client⟨x,y⟩

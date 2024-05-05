@@ -1,0 +1,21 @@
+
+type A = +{ play : ++&{ win : A, lose : --A }, stop : ⊥ }
+
+Play(x : A, y : 1) =
+  x.play; x++; case x { win  : x.stop; wait x; close y
+  	       	      , lose : x--; Play(x,y) }
+
+FairSlot(x : dual A) =
+  case x { play : x--; x.lose; x++; case x { play : x--; x.win; FairSlot(x)
+	   	       	       	    	   , stop : close x }
+         , stop : close x }
+
+UnfairSlot(x : dual A) =
+  case x { play : x--; x.lose; x++; UnfairSlot(x)
+       	 , stop : close x }
+
+RandomSlot(x : dual A) =
+  case x { play : x--; (x.lose; x++; RandomSlot(x) + x.win; RandomSlot(x))
+       	 , stop : close x }
+
+Main(y : 1) = new (x : dual A) FairSlot(x) in Play(x,y)

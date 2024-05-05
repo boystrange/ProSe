@@ -1,0 +1,12 @@
+
+type A = +{ add : A, pay : ⊥ }
+
+Buyer(x : A, y : 1) =
+  flip { 3 : x.add; Buyer(x,y)
+       , 1 : x.pay; wait x; close y }
+
+Seller(x : dual A) =
+  case x { add : Seller(x)
+       	 , pay : close x }
+
+Main(y : 1) = new (x : A) Buyer(x,y) in Seller(x)

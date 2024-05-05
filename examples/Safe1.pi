@@ -1,0 +1,4 @@
+type T = &ᴴ{ true : 1, false : 1 }
+
+Main(x : T) =
+  case x { true : close x, false : close x }

@@ -1,0 +1,28 @@
+
+type CounterP = &{ inc  : CounterP,
+     	      	   dec  : CounterP,
+		   test : ⊕{ zero : CounterP, succ : CounterP },
+		   drop : 1 }
+type CounterC = ⊕{ inc  : CounterC,
+     	      	   dec  : CounterC,
+		   test : &{ zero : CounterC, succ : CounterC },
+		   drop : ⊥ }
+
+Succ(x : CounterP, y : CounterC) =
+  case x {
+    inc  : y[succ].Succ⟨x,y⟩,
+    dec  : y[test].case y {
+      zero : y[drop].wait y.Zero⟨x⟩,
+      succ : y[dec].Succ⟨x,y⟩
+    },
+    test : x[succ].Succ⟨x,y⟩,
+    drop : y[drop].wait y.close x
+  }
+
+Zero(x : CounterP) =
+  case x {
+    inc  : new (y : CounterP) Zero⟨y⟩ in Succ⟨x,y⟩,
+    dec  : Zero⟨x⟩,
+    test : x[zero].Zero⟨x⟩,
+    drop : close x
+  }

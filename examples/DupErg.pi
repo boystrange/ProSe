@@ -1,0 +1,16 @@
+
+type Nat = +{ succ : Nat, zero : 1 }
+type Erg = +{ done : ⊥, more : --Erg }
+
+Zero(x : Nat) = x.zero; close x
+Succ(x : dual Nat, y : Nat) = y.succ; y = x
+
+Dup(e : Erg, x : dual Nat, y : Nat * Nat) =
+  case x { zero : wait x;
+       	   	  e.done;
+		  wait e;
+		  y(z) Zero(z) in Zero(y)
+       	 , succ : e.more;
+	   	  e--;
+		  new (z : Nat * Nat) Dup(e,x,z) in
+	   	  z(u); y(v) Succ(u,v) in Succ(z,y) }

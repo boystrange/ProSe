@@ -1,0 +1,5 @@
+type T = +{ a : T, b : 1 }
+
+Forward(x : dual T, y : T) =
+  case x { a : y.a; Forward(x,y)
+         , b : y.b; wait x; close y }

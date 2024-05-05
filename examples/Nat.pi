@@ -1,0 +1,79 @@
+
+type Bool = +{ true : 1, false : 1 }
+type Nat  = +{ succ : ++Nat, zero : 1 }
+type NatS = --(Nat * NatS)
+
+// True(z : Bool) = z.true; close z
+
+// False(z : Bool) = z.false; close z
+
+// Drop(x : dual Nat, y : 1) =
+//   case x { zero : wait x; close y
+//        	 , succ : x--; Drop(x,y) }
+
+Zero(x : Nat) = x.zero; close x
+
+// One(x : Nat) = x.succ; x++; Zero(x)
+
+Succ(x : dual Nat, y : Nat) = y.succ; y++; x = y
+
+SuccAll(x : dual NatS, y : NatS) =
+  y--;
+  x++;
+  x(u);
+  y(v) Succ(u,v) in SuccAll(x,y)
+
+// Add(x : dual Nat, y : dual Nat, z : Nat) =
+//   case x { zero : wait x; y = z
+//        	 , succ : x--; z.succ; z++; Add(x,y,z) }
+
+// From(x : dual Nat, y : NatS) =
+//   new (u : Nat * Nat) Dup(x,u) in
+//   u(v);
+//   y--;
+//   y(z) z = v in
+//   new (w : Nat) Succ(u,w) in From(w,y)
+
+// Sub(x : dual Nat, y : dual Nat, z : Nat) =
+//   case y { zero : wait y.Forward(x,z)
+//        	 , succ : case x { zero : wait x.
+// 	   	       	   	  new (u : 1) Drop(y,u) in
+// 				  wait u.z[zero].close z
+//                          , succ : Sub(x,y,z) } }
+
+Dup(x : dual Nat, y : Nat * Nat) =
+  case x { zero : wait x; y(z) Zero(z) in Zero(y)
+       	 , succ : x--;
+	   	  new (z : Nat * Nat) Dup(x,z) in
+	   	  z(u); y(v) Succ(u,v) in Succ(z,y) }
+
+// Mul(x : dual Nat, y : dual Nat, z : Nat) =
+//   case x { zero : wait x.
+//        	   	  new (u : 1) Drop(y,u) in
+// 		  wait u.Zero(z)
+// 	 , succ : get x.
+// 	   	  new (y2 : Nat ⊗ Nat) Dup(y,y2) in y2(y1).
+// 		  new (u : Nat) Mul(x,y1,u) in
+// 		  Add(y2,u,z) }
+
+// Fact(x : dual Nat, z : Nat) =
+//   case x { zero : wait x.One(z)
+//          , succ : new (x1 : Nat ⊗ Nat) Dup(x,x1) in x1(x2).
+// 	          new (y1 : Nat) Succ(x1,y1) in
+// 		  new (y2 : Nat) Fact(x2,y2) in
+// 		  Mul(y1,y2,z) }
+
+// IsZero(x : dual Nat, z : Bool) =
+//   case x { zero : wait x.True(z)
+//        	 , succ : new (u : 1) Drop(x,u) in wait u.False(z) }
+
+// Fibo(x : dual Nat, z : Nat) =
+//   case x { zero : wait x.Zero(z)
+//        	 , succ : get x.
+// 	   	  case x { zero : wait x.One(z)
+// 	   	       	 , succ : get x.
+// 			   	  new (x1 : Nat ⊗ Nat) Dup(x,x1) in x1(x2).
+// 				  new (z1 : Nat) Fibo(x1,z1) in
+// 				  new (x3 : Nat) Succ(x2,x3) in
+// 				  new (z2 : Nat) Fibo(x3,z2) in
+// 				  Add(z1,z2,z) } }

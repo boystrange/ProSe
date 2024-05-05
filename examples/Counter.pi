@@ -1,0 +1,22 @@
+
+type Counter = &{ inc : --Counter, val : --Bin }
+type Bin     = +{ zero : Bin, one : Bin, done : 1 }
+
+BitZeroCounter(x : Counter, y : dual Counter) =
+  case x {
+    inc : x--; BitOneCounter(x,y),
+    val : x--; x.zero; y.val; y++; x = y
+  }
+
+BitOneCounter(x : Counter, y : dual Counter) =
+  case x {
+    inc : x--; y.inc; y++; BitZeroCounter(x,y),
+    val : x--; x.one; y.val; y++; x = y
+  }
+
+EmptyCounter(x : Counter) =
+  case x {
+    inc : x--; new (y : Counter) EmptyCounter(y) in BitOneCounter(x,y),
+    val : x--; x.done; close x
+  }
+

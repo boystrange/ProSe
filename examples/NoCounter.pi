@@ -1,0 +1,17 @@
+
+type NatP = ⊕{ succ : NatP, zero : 1 }
+type NatC = &{ succ : NatC, zero : ⊥ }
+type CounterP = &{ inc : CounterP, val : 1 }
+type CounterC = ⊕{ inc : CounterC, val : ⊥ }
+
+Succ(x : CounterP, y : CounterC) =
+  case x {
+    inc : y[inc].Succ⟨x,y⟩,
+    val : y[val].wait y.close x
+  }
+
+Zero(x : CounterP) =
+  case x {
+    inc : new (z : CounterP) Zero⟨z⟩ in Succ⟨x,z⟩,
+    val : close x
+  }

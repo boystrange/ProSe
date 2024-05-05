@@ -1,0 +1,51 @@
+
+type Bool  = +{ ff : 1, tt : 1 }
+type BoolS = --(Bool * BoolS)
+
+False(x : Bool) = x.ff; close x
+True(x : Bool)  = x.tt; close x
+
+Dup(x : dual Bool, y : Bool * Bool) =
+  case x { ff : wait x; y(u) False(u) in False(y)
+       	 , tt : wait x; y(u) True(u) in True(y) }
+
+Not(x : dual Bool, y : Bool) =
+  case x { ff : wait x; True(y)
+       	 , tt  : wait x; False(y) }
+
+And(x : dual Bool, y : dual Bool, z : Bool) =
+  case x { ff : wait x;
+       	      	case y { ff : wait y; False(z)
+		       , tt : wait y; False(z) }
+	 , tt : wait x;
+	      	case y { ff : wait y; False(z)
+		       , tt : wait y; True(z) } }
+
+Or(x : dual Bool, y : dual Bool, z : Bool) =
+  new (nx : Bool) Not(x, nx) in
+  new (ny : Bool) Not(y, ny) in
+  new (nz : Bool) And(nx,ny,nz) in
+  Not(nz,z)
+
+From(x : dual Bool, y : BoolS) =
+  y--;
+  new (z : Bool * Bool) Dup(x,z) in
+  z(u);
+  y(v) u = v in
+  new (w : Bool) Not(z,w) in
+  From(w,y)
+
+NotS(x : dual BoolS, y : BoolS) =
+  y--; x++; x(u); y(v) Not(u,v) in NotS(x,y)
+
+AndS(x : dual BoolS, y : dual BoolS, z : BoolS) =
+  z--; x++; y++; x(u); y(v); z(w) And(u,v,w) in AndS(x,y,z)
+
+OrS(x : dual BoolS, y : dual BoolS, z : BoolS) =
+  z--; x++; y++; x(u); y(v); z(w) Or(u,v,w) in OrS(x,y,z)
+
+Main(x : BoolS) =
+  new (y : BoolS)
+    new (z : Bool) False(z) in
+    From(z,y)
+  in NotS(y,x)

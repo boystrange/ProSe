@@ -1,0 +1,11 @@
+
+Step0(x : 1) =
+  flip { 4 : Walk0(x)
+       , 3 : Walk2(x) }
+
+Walk0(x : 1) = close x
+Walk1(x : 1) = new (y : 1) Walk0(y) in wait y; Step0(x)
+Walk2(x : 1) = new (y : 1) Walk1(y) in wait y; Step0(x)
+
+Main(x : 1) = Walk1(x)
+

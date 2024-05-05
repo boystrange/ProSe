@@ -1,0 +1,31 @@
+
+type ConsensusP = ⊕{
+     a : &{ a : 1, b : ConsensusP },
+     b : &{ a : ConsensusP, b : 1 }
+}
+
+type ConsensusC = &{
+     a : ⊕{ a : ⊥, b : ConsensusC },
+     b : ⊕{ a : ConsensusC, b : ⊥ }
+}
+
+type ConsensusC = ⊕{
+     a : &{ a : 1, b : ConsensusP },
+     b : &{ a : ConsensusP, b : 1 }
+}
+
+Producer(x : ConsensusP) =
+  x[a].case x {
+    a : close x,
+    b : x[b].case x {
+      a : Producer⟨x⟩,
+      b : close x
+    }
+  }
+
+Consumer(x : ConsensusC, y : 1) =
+  case x {
+    case x {
+      a : x[a]
+    }
+  }

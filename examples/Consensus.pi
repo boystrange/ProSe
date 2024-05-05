@@ -1,0 +1,31 @@
+
+type A = +{ a : ++B, b : ++B }
+type B = &{ tt : 1, ff : --A }
+
+VoterA(x : A) =
+  x.a;
+  x++;
+  Poller(x)
+
+VoterB(x : A) =
+  x.b;
+  x++;
+  Poller(x)
+
+Poller(z : B) =
+  case z { tt : close z
+       	 , ff : z--; VoterA(z) }
+
+Arbiter(x : dual A, y : dual A, z : 1) =
+  case x { a : x--;
+       	       case y { a : y--; x.tt; y.tt; wait x; wait y; close z
+	       	      , b : y--; x.ff; x++; y.ff; y++; Arbiter(x,y,z) }
+         , b : x--;
+	       case y { a : y--; x.ff; x++; y.ff; y++; Arbiter(x,y,z)
+	       	      , b : y--; x.tt; y.tt; wait x; wait y; close z }
+  }
+
+Main(z : 1) =
+  new (x : A) VoterA(x) in
+  new (y : A) VoterB(y) in
+  Arbiter(x,y,z)

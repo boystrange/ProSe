@@ -1,0 +1,60 @@
+
+type Buyer    = Buyer0
+
+type Buyer0   = +{ buy : ++Seller0, bye : ⊥ }
+type BuyerA   = +{ buy : ++SellerA, bye : ⊥ }
+type BuyerB   = +{ buy : ++SellerB, bye : ⊥ }
+type BuyerAB  = +{ buy : ++SellerAB, bye : ⊥ }
+
+type Seller0  = &{ a : --BuyerA, b : --BuyerB }
+type SellerA  = &{ a : --BuyerA, b : --BuyerAB }
+type SellerB  = &{ a : --BuyerAB, b : --BuyerB }
+type SellerAB = &{ a : --BuyerAB, b : --BuyerAB }
+
+Collector(x : Buyer, y : 1) =
+  x.buy;
+  x++;
+  case x { a : x--; CollectorA(x, y)
+       	 , b : x--; CollectorB(x, y) }
+
+CollectorA(x : Buyer, y : 1) =
+  x.buy;
+  x++;
+  case x { a : x--; CollectorA(x, y)
+       	 , b : x--; CollectorAB(x, y) }
+
+CollectorB(x : Buyer, y : 1) =
+  x.buy;
+  x++;
+  case x { a : x--; CollectorAB(x, y)
+       	 , b : x--; CollectorB(x, y) }
+
+CollectorAB(x : Buyer, y : 1) =
+  x.bye; wait x; close y
+
+Store(x : dual Buyer) =
+  case x { buy : x--;
+       	       	 flip { x.a; x++; StoreA(x)
+		      , x.b; x++; StoreB(x) }
+	 , bye : close x }
+
+StoreA(x : dual Buyer) =
+  case x { buy : x--;
+       	       	 flip { x.a; x++; StoreA(x)
+		      , x.b; x++; StoreAB(x) }
+	 , bye : close x }
+
+StoreB(x : dual Buyer) =
+  case x { buy : x--;
+       	       	 flip { x.a; x++; StoreAB(x)
+		      , x.b; x++; StoreB(x) }
+	 , bye : close x }
+
+StoreAB(x : dual Buyer) =
+  case x { buy : x--;
+       	       	 flip { x.a; x++; StoreAB(x)
+		      , x.b; x++; StoreAB(x) }
+	 , bye : close x }
+
+Main(y : 1) =
+  new (x : Buyer) Collector(x,y) in Store(x)

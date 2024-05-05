@@ -1,0 +1,50 @@
+name:                ProSe
+version:             1.0
+synopsis:            A Type Checker for a Calculus of Probabilistic Sessions
+homepage:
+license:             GPL-3
+license-file:        LICENSE
+author:              Luca Padovani
+maintainer:          luca.padovani@unicam.it
+copyright:           (c) 2024 Luca Padovani
+category:            Language
+build-type:          Simple
+extra-source-files:  ChangeLog.md,
+                     README.md,
+                     examples/*.pi,
+                     Makefile
+cabal-version:       1.18
+
+executable prose
+  main-is:           Main.hs
+
+  other-modules:     Common,
+                     Atoms,
+                     Measure,
+                     Type,
+                     Process,
+                     Resolver,
+                     Parser,
+                     Lexer,
+                     Instrumenter,
+                     Checker,
+                     Solver,
+                     InformationFlow,
+                     Render,
+                     Exceptions
+  other-extensions:  CPP
+
+  build-depends:     base >=4.9,
+                     containers >=0.5,
+                     mtl >=2.2,
+                     array >=0.5,
+                     time >=1.5,
+                     filepath >=1.4,
+                     prettyprinter >=1.0,
+                     prettyprinter-ansi-terminal >=1.0,
+                     random >=1.2.1,
+                     limp >=0.3.2.3
+
+  hs-source-dirs:    src
+  build-tools:       alex, happy
+  default-language:  Haskell2010

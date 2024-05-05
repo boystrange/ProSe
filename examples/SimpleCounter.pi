@@ -1,0 +1,31 @@
+
+type CounterP = &{ inc : &{ inc : CounterP, val : 1 }, val : 1 }
+type CounterC = ⊕{ inc : ⊕{ inc : CounterC, val : ⊥ }, val : ⊥ }
+
+// BitZeroCounter(x : CounterP, y : CounterC) =
+//   case x {
+//     inc : BinOneCounter⟨x,y⟩,
+//     val : x[zero].y[val].Forward⟨y,x⟩
+//   }
+
+BitZeroCounter(x : CounterP, y : CounterC) = // bit 0
+  case x {
+    inc : case x { // bit 1
+      inc : y[inc].BitZeroCounter⟨x,y⟩,
+      val : y[val].wait y.close x
+    },
+    val : y[val].wait y.close x
+  }
+
+BitOneCounter(x : CounterP, y : CounterC) =
+  case x {
+    inc : y[inc].BitZeroCounter⟨x,y⟩,
+    val : y[val].wait y.close x
+  }
+
+EmptyCounter(x : CounterP) =
+  case x {
+    inc : new (y : CounterP) EmptyCounter⟨y⟩ in BitOneCounter⟨x,y⟩,
+    val : close x
+  }
+

@@ -1,0 +1,13 @@
+
+type A = +{ play : &{ win : A, lose : A }, quit : ⊥ }
+
+Player(x : A, y : 1) =
+  x.play; case x { win  : x.quit; wait x; close y
+  	       	 , lose : Player(x,y) }
+
+Lottery(x : dual A) =
+  case x { play : flip { 1      : x.win; Lottery(x)
+		       , 0 : x.lose; Lottery(x) }
+       	 , quit : close x }
+
+Main(y : 1) = new (x : dual A) Lottery(x) in Player(x,y)

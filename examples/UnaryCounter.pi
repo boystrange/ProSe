@@ -1,0 +1,23 @@
+
+type NatP = ⊕{ succ : NatP, zero : 1 }
+type NatC = &{ succ : NatC, zero : ⊥ }
+type CounterP = &{ inc : CounterP, val : NatP }
+type CounterC = ⊕{ inc : CounterC, val : NatC }
+
+Forward(x : NatC, y : NatP) =
+  case x {
+    zero : y[zero].wait x.close y,
+    succ : y[succ].Forward⟨x,y⟩
+  }
+
+Succ(x : CounterP, y : CounterC) =
+  case x {
+    inc : y[inc].Succ⟨x,y⟩,
+    val : y[val].x[succ].Forward⟨y,x⟩
+  }
+
+Zero(x : CounterP) =
+  case x {
+    inc : new (y : CounterP) Zero⟨y⟩ in Succ⟨x,y⟩,
+    val : x[zero].close x
+  }

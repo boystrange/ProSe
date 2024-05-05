@@ -1,0 +1,5 @@
+type T = &{ a : T, b : 1 }
+
+Main(x : T) =
+  case x { a : new (y : 1) close y in wait y; Main(x)
+         , b : close x }
