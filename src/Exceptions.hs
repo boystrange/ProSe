@@ -19,7 +19,7 @@
 module Exceptions where
 
 import Atoms
-import Type (Type)
+import Type
 import Measure
 import Render ()
 import Control.Exception (Exception)
@@ -38,7 +38,7 @@ data MyException
   | ErrorTypeUnbounded ChannelName
   | ErrorTypeNonContractive TypeName
   | ErrorTypeMismatch ChannelName String (Type Measure)
-  | ErrorTypeRelation (Type Measure) (Type Measure)
+  | ErrorTypeRelation ChannelName TypeM TypeM
   | ErrorArityMismatch ProcessName Int Int
   | ErrorLabelMismatch ChannelName [Label] [Label]
   | ErrorInvalidType String
@@ -71,5 +71,5 @@ instance Show MyException where
   show (ErrorSecurityLevelMismatch name l1 l2) = "security level mismatch: " ++ showWithPos name ++ ": expected " ++ show l1 ++ ", actual " ++ show l2
   show (ErrorRuntime msg) = "runtime error: " ++ msg
   show (ErrorSecurity msg) = "security error: " ++ msg
-  show (ErrorTypeRelation t s) = "type mismatch: " ++ show t ++ " and " ++ show s
+  show (ErrorTypeRelation name t s) = "type mismatch: " ++ showWithPos name ++ ": " ++ show t ++ " != " ++ show s
   show ErrorGeneric = "generic error"

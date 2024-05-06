@@ -1,11 +1,13 @@
 
-type Stack = &{ push : Stack
-     	      , pop  : +{ more : Stack, stop : 1 } }
+type Bool = 1
 
-Some(x : Stack, y : dual Stack) =
-  case x { push : y.push; Some(x,y)
-       	 , pop  : x.more; y.pop; case y { more : Some(x,y), stop : wait y; None(x) } }
+type Stack = &{ push : ⊥ | Stack
+     	      , pop  : +{ none : 1, some : Bool * Stack } }
 
-None(x : Stack) =
-  case x { push : new (y : Stack) None(y) in Some(x,y)
-       	 , pop  : x.stop; close x }
+Empty(s : Stack) =
+  case s { push : s(x); new (e : Stack) Empty(e) in Elem(x,s,e)
+         , pop  : s.none; close s }
+
+Elem(y : ⊥, s : Stack, t : dual Stack) =
+  case s { push : s(x); new (r : Stack) Elem(y,r,t) in Elem(x,s,r)
+       	 , pop  : s.some; s(z) y = z in t = s }

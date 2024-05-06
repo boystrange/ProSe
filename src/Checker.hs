@@ -74,7 +74,7 @@ checkTypeRel tle mle x = aux []
     auxV vs (Get m t) (Get n s) = do
       aux vs t s
       mle m n
-    auxV _ t s = throw $ ErrorTypeRelation t s
+    auxV _ t s = throw $ ErrorTypeRelation x t s
 
     leq l1 l2 = do
       unless (l1 == l2) $ throw $ ErrorSecurityLevelMismatch x l1 l2

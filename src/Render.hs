@@ -131,8 +131,8 @@ prettyLabel = identifier . show
 
 -- TYPES
 
-prettyType :: TypeM -> Document
-prettyType = annotate (PT.colorDull PT.Cyan) . aux
+prettyType :: (m -> Document) -> Type m -> Document
+prettyType prettyMeasure = annotate (PT.colorDull PT.Cyan) . aux
   where
     aux One  = keyword "1"
     aux Bot  = keyword "⊥"
@@ -148,12 +148,13 @@ prettyType = annotate (PT.colorDull PT.Cyan) . aux
     auxB (tag, t) = constant (show tag) <+> colon <+> aux t
 
 instance Show m => Show (Type m) where
-  --show = PR.renderString . layoutPretty defaultLayoutOptions . prettyType
-  show _ = "some type"
+  show = PR.renderString . layoutPretty defaultLayoutOptions . prettyType unprettyMeasure
+    where
+      unprettyMeasure = const (pretty "...")
 
 -- |Print a type.
-printType :: Type Measure -> IO ()
-printType = PT.putDoc . prettyType
+printType :: TypeM -> IO ()
+printType = PT.putDoc . prettyType prettyMeasure
 
 -- PROCESSES
 
@@ -161,14 +162,14 @@ prettyProcess :: ProcessM -> Document
 prettyProcess = go
   where
     go (Call pname xs) = identifier (show pname) <> encloseSep lparen rparen comma (map (identifier . show) xs)
-    go (Link x y) = identifier (show x) <+> operator "<->" <+> identifier (show y)
+    go (Link x y) = identifier (show x) <+> operator "=" <+> identifier (show y)
     go (Close x) = keyword "close" <+> identifier (show x)
     go (Wait x p) = keyword "wait" <+> identifier (show x) <> semi <+> go p
     go (Fork x y p q) = identifier (show x) <> parens (identifier (show y)) <+> go p <+> keyword "in" <+> go q
     go (Join x y p) = identifier (show x) <> parens (identifier (show y)) <> semi <+> go p
     go (Select x tag p) = identifier (show x) <> Render.dot <> identifier (show tag) <> semi <+> go p
     go (Case x bs) = keyword "case" <+> identifier (show x) <+> embrace lbrace rbrace comma (map goCase bs)
-    go (Cut x t p q) = keyword "new" <+> parens (identifier (show x) <+> colon <+> prettyType t) <> encloseSep lparen rparen (space <> bar <> space) [go p, go q]
+    go (Cut x t p q) = keyword "new" <+> parens (identifier (show x) <+> colon <+> prettyType prettyMeasure t) <> encloseSep lparen rparen (space <> bar <> space) [go p, go q]
     go (Flip l bs) = keyword "flip" <> prettyLevel l <+> embrace lbrace rbrace comma (map goFlip bs)
     go (PutGas x p) = keyword "put" <+> identifier (show x) <> semi <+> go p
     go (GetGas x p) = keyword "get" <+> identifier (show x) <> semi <+> go p
@@ -222,7 +223,7 @@ printProcessDec (pname, μ, xts, p) = do
   PT.putDoc (identifier (show pname) <> brackets (prettyMeasure μ))
   printNewLine
   forM_ xts (\(x, t) -> do
-               PT.putDoc (space <+> identifier (show x) <+> colon <+> prettyType t)
+               PT.putDoc (space <+> identifier (show x) <+> colon <+> prettyType prettyMeasure t)
                printNewLine
             )
   PT.putDoc (operator "=" <+> prettyProcess p)
