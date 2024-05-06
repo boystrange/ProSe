@@ -149,7 +149,7 @@ prettyType = annotate (PT.colorDull PT.Cyan) . aux
 
 instance Show m => Show (Type m) where
   --show = PR.renderString . layoutPretty defaultLayoutOptions . prettyType
-  show = undefined
+  show _ = "some type"
 
 -- |Print a type.
 printType :: Type Measure -> IO ()
