@@ -64,12 +64,12 @@ main = do
       let verbose = Verbose `elem` args
       let logging = Logging `elem` args
       let freePut = FreePut `elem` args
-      let autoIns = AutoIns `elem` args
+      let manualI = ManualI `elem` args
       when logging
         (do putStr $ takeFileName file ++ " ... "
             hFlush stdout)
       start <- getCurrentTime
-      let pdefs = if autoIns then Instrumenter.instrument pdefs0 else pdefs0
+      let pdefs = if manualI then pdefs0 else Instrumenter.instrument pdefs0
       let (cs, pdefs') = Checker.checkTypes freePut pdefs
       forM_ pdefs' printProcessDec
       when verbose (forM_ cs (\c -> putStrLn $ "  " ++ show c))
@@ -96,19 +96,19 @@ data Flag = Verbose  -- -v --verbose
           | Version  -- -V --version
           | Logging  --    --log
           | FreePut  -- -p --free-put
-          | AutoIns  -- -i --auto-instrument
+          | ManualI  -- -i --disable-instrumentation
           | Help     --    --help
             deriving (Eq, Ord)
 
 -- |List of supported flags.
 flags :: [OptDescr Flag]
 flags =
-   [ Option []  ["log"]             (NoArg Logging) "Log type checking time"
-   , Option "v" ["verbose"]         (NoArg Verbose) "Print type checking and running activities"
-   , Option "V" ["version"]         (NoArg Version) "Print version information"
-   , Option "h" ["help"]            (NoArg Help)    "Print this help message"
-   , Option "p" ["free-put"]        (NoArg FreePut) "Put operations cost nothing"
-   , Option "i" ["auto-instrument"] (NoArg AutoIns) "Automatic instrumentation"]
+   [ Option []  ["log"]                     (NoArg Logging) "Log type checking time"
+   , Option "v" ["verbose"]                 (NoArg Verbose) "Print type checking and running activities"
+   , Option "V" ["version"]                 (NoArg Version) "Print version information"
+   , Option "h" ["help"]                    (NoArg Help)    "Print this help message"
+   , Option "p" ["free-put"]                (NoArg FreePut) "Put operations cost nothing"
+   , Option "i" ["disable-instrumentation"] (NoArg ManualI) "Disable automatic instrumentation"]
 
 -- |The information displayed when the verbose option is specified.
 versionInfo :: String -> String

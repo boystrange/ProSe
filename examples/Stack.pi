@@ -1,13 +1,14 @@
 
-type Bool = 1
+type BoolP = +{ true : 1, false : 1 }
+type BoolC = &{ true : ⊥, false : ⊥ }
 
-type Stack = &{ push : ⊥ | Stack
-     	      , pop  : +{ none : 1, some : Bool * Stack } }
+type Stack = &{ push : BoolC | Stack
+     	      , pop  : +{ none : 1, some : BoolP * Stack } }
 
 Empty(s : Stack) =
   case s { push : s(x); new (e : Stack) Empty(e) in Elem(x,s,e)
          , pop  : s.none; close s }
 
-Elem(y : ⊥, s : Stack, t : dual Stack) =
+Elem(y : BoolC, s : Stack, t : dual Stack) =
   case s { push : s(x); new (r : Stack) Elem(y,r,t) in Elem(x,s,r)
        	 , pop  : s.some; s(z) y = z in t = s }

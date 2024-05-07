@@ -32,6 +32,30 @@ import qualified Data.Set as Set
 
 -- |Given a list of type definitions and a possibly open type,
 -- create a closed type.
+closer :: [TypeDef] -> [TypeDef]
+closer tdefs = mapSnd (aux []) tdefs
+  where
+    aux :: [TypeName] -> TypeS -> TypeS
+    aux tnames One  = One
+    aux tnames Bot  = Bot
+    aux tnames (Var tname) | tname `elem` tnames = Var tname
+    aux tnames (Var tname) =
+      case lookup tname tdefs of
+        Nothing -> throw (ErrorUnknownIdentifier "type" (showWithPos tname))
+        Just t  -> let s = aux (tname : tnames) t in
+                     if Set.member tname (ftv s) then
+                       Rec tname s
+                     else
+                       s
+    aux tnames (Par t s) = Par (aux tnames t) (aux tnames s)
+    aux tnames (Mul t s) = Mul (aux tnames t) (aux tnames s)
+    aux tnames (Plus l bs) = Plus l (mapSnd (aux tnames) bs)
+    aux tnames (With l bs) = With l (mapSnd (aux tnames) bs)
+    aux tnames (Put () t) = Put () (aux tnames t)
+    aux tnames (Get () t) = Get () (aux tnames t)
+
+-- |Given a list of type definitions and a possibly open type,
+-- create a closed type.
 resolveT :: [TypeDef] -> TypeS -> TypeS
 resolveT tdefs = aux []
   where
