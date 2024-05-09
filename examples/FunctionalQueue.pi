@@ -1,0 +1,44 @@
+
+type A = 1
+type AD = ⊥
+
+type List = +{ nil : 1, cons : A * List }
+type Queue = &{ enq : AD | Queue
+     	      , deq : +{ some : A * Queue, none : 1 } }
+
+Nil(xs : List) = xs.nil; close xs
+
+Cons(x : dual A, xs : dual List, ys : List) =
+  ys.cons;
+  ys(y) y = x in ys = xs
+
+RevAux(xs : dual List, ys : dual List, zs : List) =
+  case xs { nil  : wait xs; zs = ys
+       	  , cons : xs(x);
+	    	   new (us : List) Cons(x,ys,us) in
+		   RevAux(xs,us,zs) }
+
+Rev(xs : dual List, zs : List) =
+  new (ys : List) Nil(ys) in RevAux(xs,ys,zs)
+
+Queue(ins : dual List, outs : dual List, s : Queue) =
+  case s { enq : s(x);
+       	       	 new (ins1 : List) Cons(x,ins,ins1) in
+		 Queue(ins1,outs,s)
+         , deq : case outs { cons : outs(x);
+	       	      	     	    s.some;
+				    s(y) y = x in
+				    Queue(ins,outs,s)
+	       	      	   , nil  : wait outs;
+			     	    new (outs : List) Rev(ins,outs) in
+				    case outs { nil : wait outs;
+				    	      	      s.none;
+						      close s
+				              , cons : outs(x);
+					               s.some;
+						       s(y) y = x in
+						       new (ins1 : List) Nil(ins1) in
+						       Queue(ins1,outs,s)
+				    }
+			   }
+  }
