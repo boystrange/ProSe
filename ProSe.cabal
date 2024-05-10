@@ -21,6 +21,7 @@ executable prose
   other-modules:     Common,
                      Atoms,
                      Measure,
+                     Strategy,
                      Type,
                      Process,
                      Resolver,

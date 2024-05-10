@@ -1,21 +1,21 @@
 
 type Bool = +{ true : 1, false : 1 }
-type Nat  = +{ succ : ++Nat, zero : 1 }
+type Nat  = +{ succ : Nat, zero : 1 }
 type NatS = --(Nat * NatS)
 
 // True(z : Bool) = z.true; close z
 
 // False(z : Bool) = z.false; close z
 
-// Drop(x : dual Nat, y : 1) =
-//   case x { zero : wait x; close y
-//        	 , succ : x--; Drop(x,y) }
+Drop(x : dual Nat, y : 1) =
+  case x { zero : wait x; close y
+       	 , succ : Drop(x,y) }
 
 Zero(x : Nat) = x.zero; close x
 
 // One(x : Nat) = x.succ; x++; Zero(x)
 
-Succ(x : dual Nat, y : Nat) = y.succ; y++; x = y
+Succ(x : dual Nat, y : Nat) = y.succ; x = y
 
 SuccAll(x : dual NatS, y : NatS) =
   y--;
@@ -23,9 +23,9 @@ SuccAll(x : dual NatS, y : NatS) =
   x(u);
   y(v) Succ(u,v) in SuccAll(x,y)
 
-// Add(x : dual Nat, y : dual Nat, z : Nat) =
-//   case x { zero : wait x; y = z
-//        	 , succ : x--; z.succ; z++; Add(x,y,z) }
+Add(x : dual Nat, y : dual Nat, z : Nat) =
+  case x { zero : wait x; y = z
+       	 , succ : z.succ; Add(x,y,z) }
 
 // From(x : dual Nat, y : NatS) =
 //   new (u : Nat * Nat) Dup(x,u) in
@@ -43,16 +43,16 @@ SuccAll(x : dual NatS, y : NatS) =
 
 Dup(x : dual Nat, y : Nat * Nat) =
   case x { zero : wait x; y(z) Zero(z) in Zero(y)
-       	 , succ : x--;
-	   	  new (z : Nat * Nat) Dup(x,z) in
+       	 , succ : new (z : Nat * Nat) Dup(x,z) in
 	   	  z(u); y(v) Succ(u,v) in Succ(z,y) }
 
 // Mul(x : dual Nat, y : dual Nat, z : Nat) =
-//   case x { zero : wait x.
+//   case x { zero : wait x;
 //        	   	  new (u : 1) Drop(y,u) in
-// 		  wait u.Zero(z)
-// 	 , succ : get x.
-// 	   	  new (y2 : Nat ⊗ Nat) Dup(y,y2) in y2(y1).
+// 		  wait u;
+// 		  Zero(z)
+// 	 , succ : new (y2 : Nat * Nat) Dup(y,y2) in
+// 	   	  y2(y1);
 // 		  new (u : Nat) Mul(x,y1,u) in
 // 		  Add(y2,u,z) }
 

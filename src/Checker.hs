@@ -35,6 +35,7 @@ import Debug.Trace
 import Common
 import Atoms
 import Measure
+import Strategy
 import Type
 import Process
 import Exceptions
@@ -238,9 +239,6 @@ addConstraintLe :: Measure -> Measure -> Checker ()
 addConstraintLe m n | m == n = return ()
                     | otherwise = addConstraint (CLe m n)
 
-addConstraintLt :: Measure -> Measure -> Checker ()
-addConstraintLt m n = addConstraintLe (MAdd (MCon 1) m) n
-
 -- |Remove a channel from a context, returning the remaining context
 -- and the session type associated with the channel.
 remove :: Context -> ChannelName -> Checker (Context, TypeM)
@@ -258,8 +256,8 @@ insert ctx x t =
 -- | Check that all process definitions are well typed. The first
 -- argument is the subtyping relation being used, so that it is
 -- possible to choose among fair and unfair subtyping.
-checkTypes :: Bool -> [ProcessDefS] -> ([Constraint], [ProcessDef])
-checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum 0, [])
+checkTypes :: Strategy -> [ProcessDefS] -> ([Constraint], [ProcessDef])
+checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum 0, [])
   where
     checkProgram :: [ProcessDefS] -> Checker ([Constraint], [ProcessDef])
     checkProgram pdefs = do
@@ -301,7 +299,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
       unless (length ts == length xs) $ throw $ ErrorArityMismatch pname (length ts) (length xs)
       let ctx' = Map.fromList (zip xs ts)
       checkContextSub ctx' ctx
-      return (Call pname xs, μ)
+      return (Call pname xs, mcall strat μ)
     -- Link
     auxP ctx (Link x y) = do
       (ctx, t) <- remove ctx x
@@ -309,7 +307,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
       checkEmpty ctx
       checkTypeEq x t (Type.dual s)
       μ <- MRef <$> newMeasureVar
-      return (Link x y, plus1 μ)
+      return (Link x y, mred strat μ)
     -- Rule [⊥]
     auxP ctx (Wait x p) = do
       -- Remove the association for x from the context.
@@ -328,7 +326,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
       -- Make sure that the type of x is !end
       checkTypeEq x Type.One t
       μ <- MRef <$> newMeasureVar
-      return (Close x, plus1 μ)
+      return (Close x, mred strat μ)
     -- Rule [#]
     auxP ctx (Join x y p) = do
       -- If y already occurs in the context it shadows a linear name
@@ -361,7 +359,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
           (p', μ) <- auxP ctxp p
           -- Update the type of x and type check the continuation.
           (q', ν) <- auxP ctxq q
-          return (Fork x y p' q', plus1 (MAdd μ ν))
+          return (Fork x y p' q', mred strat (madd μ ν))
         -- If it is any other type...
         _ -> throw $ ErrorTypeMismatch x "⊗" t
     -- Rule [⊕]
@@ -374,7 +372,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
               ctx <- insert ctx x sk
               (p', μ) <- auxP ctx p
               let r = if l == L then Select x tag p' else Merge (Just x) [p']
-              return (r, plus1 μ)
+              return (r, mred strat μ)
             Nothing -> throw $ ErrorLabelMismatch x (map fst bs) [tag]
         _ -> throw $ ErrorTypeMismatch x "⊕" t
     -- Rule [&]
@@ -413,7 +411,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
         Type.Put ν s -> do
           ctx <- insert ctx x s
           (p', μ) <- auxP ctx p
-          return (PutGas x p', (if freePut then id else plus1) $ MAdd μ ν)
+          return (PutGas x p', mput strat (madd μ ν))
         _ -> throw $ ErrorTypeMismatch x "<|" t
     -- Rule [get]
     auxP ctx (GetGas x p) = do
@@ -435,7 +433,7 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
       ctxq <- insert ctxq x (Type.dual t)
       (p', μ) <- auxP ctxp p
       (q', ν) <- auxP ctxq q
-      return (Cut x t p' q', MAdd μ ν)
+      return (Cut x t p' q', madd μ ν)
     -- Rule [choice]
     auxP ctx (Flip l bs) = do
       -- Type check bs using the same context.
@@ -448,5 +446,5 @@ checkTypes freePut pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEn
       let (μs, bs') = unzip cs
       let r = if l == L then Flip L bs'
               else Merge Nothing (map snd bs')
-      addConstraintLt (foldr MAdd zero μs) μ
+      addConstraintLe (mred strat (foldr madd mzero μs)) μ
       return (r, μ)

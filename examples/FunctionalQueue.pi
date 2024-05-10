@@ -30,7 +30,7 @@ Queue(ins : dual List, outs : dual List, s : Queue) =
 				    s(y) y = x in
 				    Queue(ins,outs,s)
 	       	      	   , nil  : wait outs;
-			     	    new (outs : List) outs = ins in //Rev(ins,outs) in
+			     	    new (outs : List) Rev(ins,outs) in
 				    case outs { nil : wait outs;
 				    	      	      s.none;
 						      close s

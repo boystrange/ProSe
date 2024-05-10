@@ -40,14 +40,17 @@ data Measure
   | MMul Double Measure
   deriving (Eq, Ord)
 
-zero :: Measure
-zero = MCon 0
+mzero :: Measure
+mzero = MCon 0
 
-plus1 :: Measure -> Measure
-plus1 = MAdd (MCon 1)
+mone :: Measure
+mone = MCon 1
 
--- one :: Measure
--- one = Measure.succ zero
+madd :: Measure -> Measure -> Measure
+madd = MAdd
+
+msucc :: Measure -> Measure
+msucc = madd mone
 
 data Constraint
   = CEq Measure Measure
