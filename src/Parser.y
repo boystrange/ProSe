@@ -47,7 +47,8 @@ import Control.Exception
   DUAL      { Token _ TokenDual }
   CID       { $$@(Token _ (TokenCID _)) }
   LID       { $$@(Token _ (TokenLID _)) }
-  NUM       { $$@(Token _ (TokenNUM _)) }
+  INT       { $$@(Token _ (TokenINT _)) }
+  FLOAT     { $$@(Token _ (TokenFLOAT _)) }
   '='       { Token _ TokenEQ }
   '.'       { Token _ TokenDot }
   ':'       { Token _ TokenColon }
@@ -57,6 +58,8 @@ import Control.Exception
   ')'       { Token _ TokenRParen }
   '{'       { Token _ TokenLBrace }
   '}'       { Token _ TokenRBrace }
+  '['       { Token _ TokenLBrack }
+  ']'       { Token _ TokenRBrack }
   '&'       { Token _ TokenAmp }
   '|'       { Token _ TokenPar }
   '⊥'       { Token _ TokenBot }
@@ -195,10 +198,19 @@ Type
   | Type '|' Type { Par $1 $3 }
   | '&' LevelOpt Branches { With $2 $3 }
   | '+' LevelOpt Branches { Plus $2 $3 }
-  | '++' Type { Put () $2 }
-  | '--' Type { Get () $2 }
+  | '++' MeasureOpt Type { Put $2 $3 }
+  | '--' MeasureOpt Type { Get $2 $3 }
 
-Num : NUM { getNum $1 }
+MeasureOpt
+  : { Nothing }
+  | '[' Int ']' { Just $2 }
+
+Num : Int { fromIntegral $1 }
+  | Float { $1 }
+
+Int : INT { getInt $1 }
+
+Float : FLOAT { getFloat $1 }
 
 LevelOpt
   : { L }
@@ -232,8 +244,11 @@ getId :: Token -> String
 getId (Token _ (TokenLID x)) = x
 getId (Token _ (TokenCID x)) = x
 
-getNum :: Token -> Double
-getNum (Token _ (TokenNUM w)) = w
+getInt :: Token -> Int
+getInt (Token _ (TokenINT n)) = n
+
+getFloat :: Token -> Double
+getFloat (Token _ (TokenFLOAT n)) = n
 
 getPos :: Token -> (Int, Int)
 getPos (Token (AlexPn _ line col) _) = (line, col)

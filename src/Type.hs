@@ -46,7 +46,7 @@ data Type m
   | Get m (Type m)
   deriving (Eq, Ord)
 
-type TypeS = Type ()
+type TypeS = Type (Maybe Int)
 data TypeE = Type TypeS | Dual TypeS
 type TypeM = Type Measure
 

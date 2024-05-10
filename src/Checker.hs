@@ -138,18 +138,21 @@ annotateType = aux
     aux (With l bs) = do
       bs' <- mapM auxB bs
       return $ With l bs'
-    aux (Get () t) = do
-      m <- MRef <$> newMeasureVar
+    aux (Get m t) = do
+      m' <- auxM m
       t' <- aux t
-      return $ Get m t'
-    aux (Put () t) = do
-      m <- MRef <$> newMeasureVar
+      return $ Get m' t'
+    aux (Put m t) = do
+      m' <- auxM m
       t' <- aux t
-      return $ Put m t'
+      return $ Put m' t'
 
     auxB (tag, t) = do
       t' <- aux t
       return (tag, t')
+
+    auxM Nothing = MRef <$> newMeasureVar
+    auxM (Just n) = return $ MCon n
 
 annotateProcess :: ProcessS -> Checker ProcessM
 annotateProcess = go

@@ -75,7 +75,8 @@ tokens :-
   "--"    { lex' TokenGet         }
   @lid    { lex lookupLID         }
   @cid    { lex TokenCID          }
-  @num    { lex (TokenNUM . read) }
+  @int    { lex (TokenINT . read) }
+  @float  { lex (TokenFLOAT .read) }
 
 {
 -- To improve error messages, We keep the path of the file we are
@@ -122,7 +123,8 @@ data TokenClass
   | TokenDual
   | TokenLID String
   | TokenCID String
-  | TokenNUM Double
+  | TokenINT Int
+  | TokenFLOAT Double
   | TokenEQ
   | TokenBot
   | TokenPlus
