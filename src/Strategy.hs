@@ -21,15 +21,19 @@ import Measure
 
 data Strategy
   = Strategy
-    { mcall :: Measure -> Measure
-    , mred  :: Measure -> Measure
-    , mput  :: Measure -> Measure }
+    { mcall  :: Measure -> Measure
+    , mlink  :: Measure -> Measure
+    , mclose :: Measure -> Measure
+    , mfork  :: Measure -> Measure
+    , mtag   :: Measure -> Measure
+    , mput   :: Measure -> Measure
+    , mflip  :: Measure -> Measure }
 
-defaultStrategy :: Strategy
-defaultStrategy = Strategy { mcall = id, mred = msucc, mput = msucc }
+-- defaultStrategy :: Strategy
+-- defaultStrategy = Strategy { mcall = id, mred = msucc, mput = msucc }
 
-freePutStrategy :: Strategy
-freePutStrategy = Strategy { mcall = id, mred = msucc, mput = id }
+-- freePutStrategy :: Strategy
+-- freePutStrategy = Strategy { mcall = id, mred = msucc, mput = id }
 
-onlyCallStrategy :: Strategy
-onlyCallStrategy = Strategy { mcall = msucc, mred = id, mput = id }
+-- onlyCallStrategy :: Strategy
+-- onlyCallStrategy = Strategy { mcall = msucc, mred = id, mput = id }

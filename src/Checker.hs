@@ -307,7 +307,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
       checkEmpty ctx
       checkTypeEq x t (Type.dual s)
       μ <- MRef <$> newMeasureVar
-      return (Link x y, mred strat μ)
+      return (Link x y, mlink strat μ)
     -- Rule [⊥]
     auxP ctx (Wait x p) = do
       -- Remove the association for x from the context.
@@ -326,7 +326,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
       -- Make sure that the type of x is !end
       checkTypeEq x Type.One t
       μ <- MRef <$> newMeasureVar
-      return (Close x, mred strat μ)
+      return (Close x, mclose strat μ)
     -- Rule [#]
     auxP ctx (Join x y p) = do
       -- If y already occurs in the context it shadows a linear name
@@ -344,7 +344,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
           (p', μ) <- auxP ctx p
           return (Join x y p', μ)
         -- If it is any other type, signal the error.
-        _ -> throw $ ErrorTypeMismatch x (show ctx) t
+        _ -> throw $ ErrorTypeMismatch x "|" t
     -- Rule [⊗]
     auxP ctx (Fork x y p q) = do
       -- Remove the association for x from the context.
@@ -359,9 +359,9 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
           (p', μ) <- auxP ctxp p
           -- Update the type of x and type check the continuation.
           (q', ν) <- auxP ctxq q
-          return (Fork x y p' q', mred strat (madd μ ν))
+          return (Fork x y p' q', mfork strat (madd μ ν))
         -- If it is any other type...
-        _ -> throw $ ErrorTypeMismatch x "⊗" t
+        _ -> throw $ ErrorTypeMismatch x "*" t
     -- Rule [⊕]
     auxP ctx (Select x tag p) = do
       (ctx, t) <- remove ctx x
@@ -372,7 +372,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
               ctx <- insert ctx x sk
               (p', μ) <- auxP ctx p
               let r = if l == L then Select x tag p' else Merge (Just x) [p']
-              return (r, mred strat μ)
+              return (r, mtag strat μ)
             Nothing -> throw $ ErrorLabelMismatch x (map fst bs) [tag]
         _ -> throw $ ErrorTypeMismatch x "⊕" t
     -- Rule [&]
@@ -412,7 +412,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
           ctx <- insert ctx x s
           (p', μ) <- auxP ctx p
           return (PutGas x p', mput strat (madd μ ν))
-        _ -> throw $ ErrorTypeMismatch x "<|" t
+        _ -> throw $ ErrorTypeMismatch x "++" t
     -- Rule [get]
     auxP ctx (GetGas x p) = do
       (ctx, t) <- remove ctx x
@@ -422,7 +422,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
           (p', μ) <- auxP ctx p
           addConstraintLe ν μ
           return (GetGas x p', MSub μ ν)
-        _ -> throw $ ErrorTypeMismatch x "|>" t
+        _ -> throw $ ErrorTypeMismatch x "--" t
     -- Rule [cut]
     auxP ctx (Cut x t p q) = do
       -- If x already occurs in the context we throw an exception, because it
@@ -446,5 +446,5 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
       let (μs, bs') = unzip cs
       let r = if l == L then Flip L bs'
               else Merge Nothing (map snd bs')
-      addConstraintLe (mred strat (foldr madd mzero μs)) μ
+      addConstraintLe (mflip strat (foldr madd mzero μs)) μ
       return (r, μ)

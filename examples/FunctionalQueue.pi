@@ -2,7 +2,8 @@
 type A = 1
 type AD = ⊥
 
-type List  = +{ nil : 1, cons : A * List }
+type List = +{ nil : 1, cons : A * List }
+
 type Queue = &{ enq : AD | Queue
      	      , deq : +{ some : A * Queue, none : 1 } }
 
@@ -12,14 +13,20 @@ Cons(x : dual A, xs : dual List, ys : List) =
   ys.cons;
   ys(y) y = x in ys = xs
 
+Nil2(xs : List) = xs.nil; close xs
+
+Cons2(x : dual A, xs : dual List, ys : List) =
+  ys.cons;
+  ys(y) y = x in ys = xs
+
 RevAux(xs : dual List, ys : dual List, zs : List) =
   case xs { nil  : wait xs; zs = ys
        	  , cons : xs(x);
-	    	   new (us : List) Cons(x,ys,us) in
+	    	   new (us : List) Cons2(x,ys,us) in
 		   RevAux(xs,us,zs) }
 
 Rev(xs : dual List, zs : List) =
-  new (ys : List) Nil(ys) in RevAux(xs,ys,zs)
+  new (ys : List) Nil2(ys) in RevAux(xs,ys,zs)
 
 Queue(ins : dual List, outs : dual List, s : Queue) =
   case s { enq : s(x);
