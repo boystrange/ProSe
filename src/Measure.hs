@@ -17,6 +17,7 @@
 
 module Measure where
 
+import Common
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -80,10 +81,11 @@ instance MeasureVariables a => MeasureVariables [a] where
 instance MeasureVariables a => MeasureVariables (Set a) where
   mv = Set.unions . Set.elems . Set.map mv
 
+type Substitution = Map MVar MVar
+
 gatherSubstitutions :: [Constraint] -> (Map MVar MVar, [Constraint])
 gatherSubstitutions = foldl aux (Map.empty, [])
   where
-    aux res (Ceq (MRef μ) (MRef ν)) | μ == ν = res
     aux (subst, cs) (CEq (MRef μ) (MRef ν)) = (mergeS subst (makeS μ ν), cs)
     aux (subst, cs) c = (subst, c : cs)
 
