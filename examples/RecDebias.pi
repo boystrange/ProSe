@@ -1,0 +1,18 @@
+
+type Bool  = +{ tt : 1, ff : 1 }
+type Bools = &{ req : +{ tt : Bools, ff : Bools }, done : 1 }
+
+Generator(b : Bools) =
+  case b { req : flip { 6 : b.tt; Generator(b)
+       	       	      , 4 : b.ff; Generator(b) }
+	 , done : close b }
+
+Debias(b : dual Bools, c : Bool) =
+  b.req;
+  case b { tt : b.req; case b { tt : Debias(b,c)
+       	   	  	      , ff : c.tt; b.done; wait b; close c }
+         , ff : b.req; case b { tt : c.ff; b.done; wait b; close c
+	      	       	      , ff : Debias(b,c) } }
+
+Main(c : Bool) =
+  new (b : Bools) Generator(b) in Debias(b,c)

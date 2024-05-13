@@ -27,34 +27,20 @@ Add(x : dual Nat, y : dual Nat, z : Nat) =
   case x { zero : wait x; y = z
        	 , succ : z.succ; Add(x,y,z) }
 
-// From(x : dual Nat, y : NatS) =
-//   new (u : Nat * Nat) Dup(x,u) in
-//   u(v);
-//   y--;
-//   y(z) z = v in
-//   new (w : Nat) Succ(u,w) in From(w,y)
-
-// Sub(x : dual Nat, y : dual Nat, z : Nat) =
-//   case y { zero : wait y.Forward(x,z)
-//        	 , succ : case x { zero : wait x.
-// 	   	       	   	  new (u : 1) Drop(y,u) in
-// 				  wait u.z[zero].close z
-//                          , succ : Sub(x,y,z) } }
-
 Dup(x : dual Nat, y : Nat * Nat) =
   case x { zero : wait x; y(z) Zero(z) in Zero(y)
        	 , succ : new (z : Nat * Nat) Dup(x,z) in
 	   	  z(u); y(v) Succ(u,v) in Succ(z,y) }
 
-// Mul(x : dual Nat, y : dual Nat, z : Nat) =
-//   case x { zero : wait x;
-//        	   	  new (u : 1) Drop(y,u) in
-// 		  wait u;
-// 		  Zero(z)
-// 	 , succ : new (y2 : Nat * Nat) Dup(y,y2) in
-// 	   	  y2(y1);
-// 		  new (u : Nat) Mul(x,y1,u) in
-// 		  Add(y2,u,z) }
+Mul(x : dual Nat, y : dual Nat, z : Nat) =
+  case x { zero : wait x;
+       	   	  new (u : 1) Drop(y,u) in
+		  wait u;
+		  Zero(z)
+	 , succ : new (y2 : Nat * Nat) Dup(y,y2) in
+	   	  y2(y1);
+		  new (u : Nat) Mul(x,y1,u) in
+		  Add(y2,u,z) }
 
 // Fact(x : dual Nat, z : Nat) =
 //   case x { zero : wait x.One(z)

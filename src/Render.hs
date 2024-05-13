@@ -102,15 +102,17 @@ instance Show MVar where
       major = n `div` max
       minor = n `mod` max
 
+atom :: Measure -> Bool
+atom (MCon _) = True
+atom (MRef _) = True
+atom _ = False
+
 instance Show Measure where
   show (MCon n) = show n
   show (MRef u) = show u
+  show (MMul d m) = show d ++ "*" ++ if atom m then show m else "(" ++ show m ++ ")"
   show (MAdd m n) = show m ++ " + " ++ show n
   show (MSub m n) = show m ++ " - " ++ if atom n then show n else "(" ++ show n ++ ")"
-    where
-      atom (MCon _) = True
-      atom (MRef _) = True
-      atom _ = False
 
 instance Show Constraint where
   show (CEq m n) = show m ++ " == " ++ show n
