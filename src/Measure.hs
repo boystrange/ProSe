@@ -79,3 +79,18 @@ instance MeasureVariables a => MeasureVariables [a] where
 
 instance MeasureVariables a => MeasureVariables (Set a) where
   mv = Set.unions . Set.elems . Set.map mv
+
+gatherSubstitutions :: [Constraint] -> (Map MVar MVar, [Constraint])
+gatherSubstitutions = foldl aux (Map.empty, [])
+  where
+    aux res (Ceq (MRef μ) (MRef ν)) | μ == ν = res
+    aux (subst, cs) (CEq (MRef μ) (MRef ν)) = (mergeS subst (makeS μ ν), cs)
+    aux (subst, cs) c = (subst, c : cs)
+
+    makeS :: MVar -> MVar -> Substitution
+    makeS μ ν | μ == ν = Map.empty
+    makeS μ ν | μ > ν = Map.singleton μ ν
+              | otherwise = Map.singleton ν μ
+
+    mergeS :: Substitution -> Substitution -> Substitution
+    mergeS = mergeMap id id min
