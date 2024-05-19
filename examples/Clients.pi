@@ -1,0 +1,7 @@
+
+Client(x : ?⊥, z : 1) =
+  flip { 1 : close z, 99999 : ?x(y) wait y; Client(x,z) }
+
+Server(x : !1) = !x(y) close y
+
+Main(z : 1) = new (x : !1) Server(x) in Client(x,z)
