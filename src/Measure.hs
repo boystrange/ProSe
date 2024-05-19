@@ -20,7 +20,8 @@ module Measure where
 import Common
 import Data.Set (Set)
 import qualified Data.Set as Set
-
+import Data.Partition (Partition)
+import qualified Data.Partition as Partition
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -28,6 +29,8 @@ import Data.List (sort)
 
 data MVar = MVar Int
   deriving (Eq, Ord)
+
+type MSubst = Partition MVar
 
 instance Enum MVar where
   toEnum = MVar
@@ -60,6 +63,7 @@ data Constraint
 
 class Ord a => MeasureVariables a where
   mv :: a -> Set MVar
+  subst :: MSubst -> a -> a
 
 instance MeasureVariables Measure where
   mv (MCon _) = Set.empty
@@ -68,31 +72,34 @@ instance MeasureVariables Measure where
   mv (MSub m n) = Set.union (mv m) (mv n)
   mv (MMul w m) = mv m
 
+  subst σ (MCon n) = MCon n
+  subst σ (MRef x) = MRef (Partition.rep σ x)
+  subst σ (MAdd m n) = MAdd (subst σ m) (subst σ n)
+  subst σ (MSub m n) = MSub (subst σ m) (subst σ n)
+  subst σ (MMul w m) = MMul w (subst σ m)
+
 instance MeasureVariables Constraint where
   mv (CEq m n) = Set.union (mv m) (mv n)
   mv (CLe m n) = Set.union (mv m) (mv n)
+  subst σ (CEq m n) = CEq (subst σ m) (subst σ n)
+  subst σ (CLe m n) = CLe (subst σ m) (subst σ n)
 
 instance (MeasureVariables a, MeasureVariables b) => MeasureVariables (a, b) where
   mv (x, y) = Set.union (mv x) (mv y)
+  subst σ (x, y) = (subst σ x, subst σ y)
 
 instance MeasureVariables a => MeasureVariables [a] where
   mv = Set.unions . map mv
+  subst = map . subst
 
 instance MeasureVariables a => MeasureVariables (Set a) where
   mv = Set.unions . Set.elems . Set.map mv
+  subst = Set.map . subst
 
-type Substitution = Map MVar MVar
+type MPartition = Partition MVar
 
-gatherSubstitutions :: [Constraint] -> (Map MVar MVar, [Constraint])
-gatherSubstitutions = foldl aux (Map.empty, [])
+gatherSubstitutions :: [Constraint] -> (MSubst, [Constraint])
+gatherSubstitutions = foldl aux (Partition.empty, [])
   where
-    aux (subst, cs) (CEq (MRef μ) (MRef ν)) = (mergeS subst (makeS μ ν), cs)
-    aux (subst, cs) c = (subst, c : cs)
-
-    makeS :: MVar -> MVar -> Substitution
-    makeS μ ν | μ == ν = Map.empty
-    makeS μ ν | μ > ν = Map.singleton μ ν
-              | otherwise = Map.singleton ν μ
-
-    mergeS :: Substitution -> Substitution -> Substitution
-    mergeS = mergeMap id id min
+    aux (σ, cs) (CEq (MRef μ) (MRef ν)) = (Partition.joinElems μ ν σ, cs)
+    aux (σ, cs) c = (σ, c : cs)

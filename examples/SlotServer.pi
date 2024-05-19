@@ -1,0 +1,13 @@
+
+type A = ?&{ win : ⊥, lose : ⊥ }
+
+Play(x : A, z : 1) =
+  ?x(y)
+  case y { win  : wait y; close z
+       	 , lose : wait y; Play(x,z) }
+
+Slot(x : dual A) =
+  !x(y)
+  flip { 1 : y.win; close y, 999999 : y.lose; close y }
+
+Main(z : 1) = new (x : dual A) Slot(x) in Play(x,z)

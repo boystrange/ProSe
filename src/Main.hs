@@ -78,16 +78,21 @@ main = do
             hFlush stdout)
       start <- getCurrentTime
       let pdefs = if manualI then pdefs0 else Instrumenter.instrument pdefs0
-      let (cs, pdefs') = Checker.checkTypes strat pdefs
+      let (cs0, pdefs'') = Checker.checkTypes strat pdefs
+      -- let (σ, cs1) = Measure.gatherSubstitutions cs0
+      -- let cs = map (subst σ) cs1
+      -- let pdefs' = map (substProcessDef σ) pdefs''
+      let cs = cs0
+      let pdefs' = pdefs''
       forM_ pdefs' printProcessDec
       when verbose (forM_ cs (\c -> putStrLn $ "  " ++ show c))
       when True
         (do let μs = Set.toList (mv cs)
             case Solver.solve μs cs of
-              Nothing -> printNO "fair termination checker"
+              Nothing -> printNO "termination checker"
               Just μmap -> do printSolution μmap
                               putStrLn ""
-                              printOK (Just "fair termination checker")
+                              printOK (Just "termination checker")
         )
       unless (InformationFlow.mergeable pdefs') (printNO "information flow analysis")
       stop <- getCurrentTime

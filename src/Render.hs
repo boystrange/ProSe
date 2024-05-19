@@ -144,6 +144,8 @@ prettyType prettyMeasure = annotate (PT.colorDull PT.Cyan) . aux
     aux (Mul t s) = brackets (aux t <+> operator "*" <+> aux s)
     aux (Plus l bs) = operator "+" <> prettyLevel l <> embrace lbrace rbrace comma (map auxB bs)
     aux (With l bs) = operator "&" <> prettyLevel l <> embrace lbrace rbrace comma (map auxB bs)
+    aux (OfCourse t) = operator "?" <> aux t
+    aux (WhyNot t) = operator "!" <> aux t
     aux (Put m t) = operator "++" <> brackets (prettyMeasure m) <+> aux t
     aux (Get m t) = operator "--" <> brackets (prettyMeasure m) <+> aux t
 
@@ -171,6 +173,8 @@ prettyProcess = go
     go (Join x y p) = identifier (show x) <> parens (identifier (show y)) <> semi <+> go p
     go (Select x tag p) = identifier (show x) <> Render.dot <> identifier (show tag) <> semi <+> go p
     go (Case x bs) = keyword "case" <+> identifier (show x) <+> embrace lbrace rbrace comma (map goCase bs)
+    go (Client x y p) = operator "?" <> identifier (show x) <> parens (identifier (show y)) <+> go p
+    go (Server x y p) = operator "!" <> identifier (show x) <> parens (identifier (show y)) <+> go p
     go (Cut x t p q) = keyword "new" <+> parens (identifier (show x) <+> colon <+> prettyType prettyMeasure t) <> encloseSep lparen rparen (space <> bar <> space) [go p, go q]
     go (Flip l bs) = keyword "flip" <> prettyLevel l <+> embrace lbrace rbrace comma (map goFlip bs)
     go (PutGas x p) = keyword "put" <+> identifier (show x) <> semi <+> go p

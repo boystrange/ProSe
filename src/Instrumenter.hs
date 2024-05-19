@@ -40,6 +40,8 @@ instrument = map goD
     goP (PutGas x p) = PutGas x (goP p)
     goP (GetGas x p) = GetGas x (goP p)
     goP (Merge mx ps) = Merge mx (map goP ps)
+    goP (Client x y p) = Client x y (PutGas y (goP p))
+    goP (Server x y p) = Server x y (GetGas y (goP p))
     goP p = p
 
     goT :: TypeS -> TypeS
@@ -48,6 +50,8 @@ instrument = map goD
     goT (Mul t s) = Mul (goT t) (goT s)
     goT (With l bs) = With l (mapSnd (Get Nothing . goT) bs)
     goT (Plus l bs) = Plus l (mapSnd (Put Nothing . goT) bs)
+    goT (WhyNot t) = WhyNot (Put Nothing (goT t))
+    goT (OfCourse t) = OfCourse (Get Nothing (goT t))
     goT (Put m t) = Put m (goT t)
     goT (Get m t) = Get m (goT t)
     goT t = t

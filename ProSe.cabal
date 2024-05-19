@@ -44,7 +44,8 @@ executable prose
                      prettyprinter >=1.0,
                      prettyprinter-ansi-terminal >=1.0,
                      random >=1.2.1,
-                     limp >=0.3.2.3
+                     limp >=0.3.2.3,
+                     data-partition
 
   hs-source-dirs:    src
   build-tools:       alex, happy

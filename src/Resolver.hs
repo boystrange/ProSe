@@ -51,6 +51,8 @@ resolveT tdefs = aux []
     aux tnames (Mul t s) = Mul (aux tnames t) (aux tnames s)
     aux tnames (Plus l bs) = Plus l (mapSnd (aux tnames) bs)
     aux tnames (With l bs) = With l (mapSnd (aux tnames) bs)
+    aux tnames (WhyNot t) = WhyNot (aux tnames t)
+    aux tnames (OfCourse t) = OfCourse (aux tnames t)
     aux tnames (Put m t) = Put m (aux tnames t)
     aux tnames (Get m t) = Get m (aux tnames t)
 
@@ -71,6 +73,8 @@ resolveP tdefs = aux
     aux (Join x y p)     = Join x y (aux p)
     aux (Select x tag p) = Select x tag (aux p)
     aux (Case x bs)      = Case x (mapSnd aux bs)
+    aux (Client x y p)   = Client x y (aux p)
+    aux (Server x y p)   = Server x y (aux p)
     aux (Flip l bs)      = Flip l (mapSnd aux bs)
     aux (Cut x t p q)    = Cut x (resolveE tdefs t) (aux p) (aux q)
     aux (PutGas x p)     = PutGas x (aux p)

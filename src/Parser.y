@@ -69,6 +69,8 @@ import Control.Exception
   'ᴴ'        { Token _ TokenHigh }
   '++'      { Token _ TokenPut }
   '--'      { Token _ TokenGet }
+  '?'       { Token _ TokenQMark }
+  '!'       { Token _ TokenEMark }
 
 %nonassoc '}' ']' IN
 
@@ -130,6 +132,8 @@ Process
   | ChannelName '++' ';' Process { PutGas $1 $4 }
   | ChannelName '--' ';' Process { GetGas $1 $4 }
   | ProcessName Names { Call $1 $2 }
+  | '?' ChannelName '(' ChannelName ')' Process { Client $2 $4 $6 }
+  | '!' ChannelName '(' ChannelName ')' Process { Server $2 $4 $6 }
 
 Names
   : { [] }
@@ -198,6 +202,8 @@ Type
   | Type '|' Type { Par $1 $3 }
   | '&' LevelOpt Branches { With $2 $3 }
   | '+' LevelOpt Branches { Plus $2 $3 }
+  | '?' Type { WhyNot $2 }
+  | '!' Type { OfCourse $2 }
   | '++' MeasureOpt Type { Put $2 $3 }
   | '--' MeasureOpt Type { Get $2 $3 }
 

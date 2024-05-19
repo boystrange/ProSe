@@ -18,6 +18,7 @@
 -- |Representation of processes (Section 4).
 module Process where
 
+import Common
 import Atoms
 import Measure
 import Type
@@ -54,6 +55,8 @@ data Process t
   | GetGas ChannelName (Process t)
   -- |Internal use.
   | Merge (Maybe ChannelName) [Process t]
+  | Client ChannelName ChannelName (Process t)
+  | Server ChannelName ChannelName (Process t)
   deriving (Eq, Ord)
 
 -- |Set of channel names occurring free in a process.
@@ -70,6 +73,8 @@ fn (Cut x _ p q) = Set.delete x (Set.union (fn p) (fn q))
 fn (PutGas x p) = Set.insert x (fn p)
 fn (GetGas x p) = Set.insert x (fn p)
 fn (Flip _ ps) = Set.unions (map (fn . snd) ps)
+fn (Client x y p) = Set.insert x (Set.delete y (fn p))
+fn (Server x y p) = Set.insert x (Set.delete y (fn p))
 
 -- | A __process definition__ is a triple made of a process name, a
 -- list of name declarations and an optional process body. When the
@@ -93,4 +98,26 @@ isThread x (Select y _ _) = x == y
 isThread x (Case y _) = x == y
 isThread x (PutGas y _) = x == y
 isThread x (GetGas y _) = x == y
+isThread x (Client y _ _) = x == y
+isThread x (Server y _ _) = x == y
 isThread _ _ = False
+
+instance Functor Process where
+  fmap f (Call pname xs) = Call pname xs
+  fmap f (Link x y) = Link x y
+  fmap f (Wait x p) = Wait x (fmap f p)
+  fmap f (Close x) = Close x
+  fmap f (Fork x y p q) = Fork x y (fmap f p) (fmap f q)
+  fmap f (Join x y p) = Join x y (fmap f p)
+  fmap f (Select x l p) = Select x l (fmap f p)
+  fmap f (Case x bs) = Case x (mapSnd (fmap f) bs)
+  fmap f (Cut x t p q) = Cut x (f t) (fmap f p) (fmap f q)
+  fmap f (Flip l bs) = Flip l (mapSnd (fmap f) bs)
+  fmap f (PutGas x p) = PutGas x (fmap f p)
+  fmap f (GetGas x p) = GetGas x (fmap f p)
+  fmap f (Client x y p) = Client x y (fmap f p)
+  fmap f (Server x y p) = Server x y (fmap f p)
+  fmap f (Merge m ps) = Merge m (map (fmap f) ps)
+
+substProcessDef :: MSubst -> ProcessDef -> ProcessDef
+substProcessDef σ (pname, μ, xts, p) = (pname, subst σ μ, mapSnd (subst σ) xts, fmap (subst σ) p)

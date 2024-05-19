@@ -69,6 +69,8 @@ checkTypeRel tle mle x = aux []
       let m2 = Map.fromList bs2
       tle (Map.keysSet m1) (Map.keysSet m2)
       forM_ (Map.elems (zipMap m1 m2)) (uncurry (aux vs))
+    auxV vs (WhyNot t) (WhyNot s) = aux vs t s
+    auxV vs (OfCourse t) (OfCourse s) = aux vs t s
     auxV vs (Put m t) (Put n s) = do
       aux vs t s
       mle n m
@@ -139,6 +141,12 @@ annotateType = aux
     aux (With l bs) = do
       bs' <- mapM auxB bs
       return $ With l bs'
+    aux (WhyNot t) = do
+      t' <- aux t
+      return $ WhyNot t'
+    aux (OfCourse t) = do
+      t' <- aux t
+      return $ OfCourse t'
     aux (Get m t) = do
       m' <- auxM m
       t' <- aux t
@@ -192,6 +200,12 @@ annotateProcess = go
     go (Flip l bs) = do
       bs <- mapM goB bs
       return $ Flip l bs
+    go (Client x y p) = do
+      p <- go p
+      return $ Client x y p
+    go (Server x y p) = do
+      p <- go p
+      return $ Server x y p
 
     goB :: (a, ProcessS) -> Checker (a, ProcessM)
     goB (x, p) = do
@@ -239,13 +253,18 @@ addConstraintLe :: Measure -> Measure -> Checker ()
 addConstraintLe m n | m == n = return ()
                     | otherwise = addConstraint (CLe m n)
 
+peek :: Context -> ChannelName -> Checker TypeM
+peek ctx x =
+  case Map.lookup x ctx of
+    Nothing -> throw $ ErrorUnknownIdentifier "channel" (showWithPos x)
+    Just t -> return t
+
 -- |Remove a channel from a context, returning the remaining context
 -- and the session type associated with the channel.
 remove :: Context -> ChannelName -> Checker (Context, TypeM)
-remove ctx x =
-  case Map.lookup x ctx of
-    Nothing -> throw $ ErrorUnknownIdentifier "channel" (showWithPos x)
-    Just t -> return (Map.delete x ctx, t)
+remove ctx x = do
+  t <- peek ctx x
+  return (Map.delete x ctx, t)
 
 insert :: Context -> ChannelName -> TypeM -> Checker Context
 insert ctx x t =
@@ -276,8 +295,11 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
 
     -- Check that the context is empty. If not, there are some
     -- channels left unused.
-    checkEmpty :: Context -> Checker ()
-    checkEmpty ctx = unless (Map.null ctx) $ throw $ ErrorLinearity (Map.keys ctx)
+    -- checkEmpty :: Context -> Checker ()
+    -- checkEmpty ctx = unless (Map.null ctx) $ throw $ ErrorLinearity (Map.keys ctx)
+
+    checkUn :: Context -> Checker ()
+    checkUn ctx = unless (all un (Map.elems ctx)) $ throw $ ErrorLinearity (Map.keys (Map.filter lin ctx))
 
     -- Return the list of session types associated with the free
     -- names of a process name.
@@ -288,8 +310,11 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
     --     Just (m, gs) -> return (m, gs)
 
     partitionContext :: Context -> ProcessM -> ProcessM -> (Context, Context)
-    partitionContext ctx p q = (Map.withoutKeys ctx qnameset, Map.restrictKeys ctx qnameset)
+    partitionContext ctx p q = (pctx, qctx)
       where
+        (uctx, lctx) = Map.partition un ctx
+        pctx = Map.union uctx (Map.withoutKeys lctx qnameset)
+        qctx = Map.union uctx (Map.restrictKeys lctx qnameset)
         qnameset = fn q
 
     -- Check that a process is well typed in a given context.
@@ -304,7 +329,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
     auxP ctx (Link x y) = do
       (ctx, t) <- remove ctx x
       (ctx, s) <- remove ctx y
-      checkEmpty ctx
+      checkUn ctx
       checkTypeEq x t (Type.dual s)
       μ <- MRef <$> newMeasureVar
       return (Link x y, mlink strat μ)
@@ -322,7 +347,7 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
       -- Remove the association for x from the context.
       (ctx, t) <- remove ctx x
       -- Make sure that the remaining context is empty.
-      checkEmpty ctx
+      checkUn ctx
       -- Make sure that the type of x is !end
       checkTypeEq x Type.One t
       μ <- MRef <$> newMeasureVar
@@ -404,6 +429,26 @@ checkTypes strat pdefs = State.evalState (checkProgram pdefs) (Map.empty, toEnum
           return (r, μ)
         -- In all the other cases the type is just the wrong one
         _ -> throw $ ErrorTypeMismatch x "&" t
+    -- Rule [?]
+    auxP ctx (Client x y p) = do
+      t <- peek ctx x
+      case Type.unfold t of
+        Type.WhyNot s -> do
+          ctxp <- insert ctx y s
+          (p', μ) <- auxP ctxp p
+          return (Client x y p', msucc μ)
+        _ -> throw $ ErrorTypeMismatch x "?" t
+    -- Rule [!]
+    auxP ctx (Server x y p) = do
+      (ctx, t) <- remove ctx x
+      checkUn ctx
+      case Type.unfold t of
+        Type.OfCourse s -> do
+          ctxp <- insert ctx y s
+          (p', μ) <- auxP ctxp p
+          addConstraintLe μ mzero
+          return (Server x y p', mzero)
+        _ -> throw $ ErrorTypeMismatch x "!" t
     -- Rule [put]
     auxP ctx (PutGas x p) = do
       (ctx, t) <- remove ctx x

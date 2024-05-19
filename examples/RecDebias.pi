@@ -1,13 +1,19 @@
 
 type Bool  = +{ tt : 1, ff : 1 }
-type Bools = &{ req : +{ tt : Bools, ff : Bools }, done : 1 }
+type Bools1 = &{ req : +{ tt : Bools2, ff : Bools2 }, done : 1 }
+type Bools2 = &{ req : +{ tt : Bools1, ff : Bools1 }, done : 1 }
 
-Generator(b : Bools) =
-  case b { req : flip { 6 : b.tt; Generator(b)
-       	       	      , 4 : b.ff; Generator(b) }
+Generator1(b : Bools1) =
+  case b { req : flip { 6 : b.tt; Generator2(b)
+       	       	      , 4 : b.ff; Generator2(b) }
 	 , done : close b }
 
-Debias(b : dual Bools, c : Bool) =
+Generator2(b : Bools2) =
+  case b { req : flip { 6 : b.tt; Generator1(b)
+       	       	      , 4 : b.ff; Generator1(b) }
+	 , done : close b }
+
+Debias(b : dual Bools1, c : Bool) =
   b.req;
   case b { tt : b.req; case b { tt : Debias(b,c)
        	   	  	      , ff : c.tt; b.done; wait b; close c }
@@ -15,4 +21,4 @@ Debias(b : dual Bools, c : Bool) =
 	      	       	      , ff : Debias(b,c) } }
 
 Main(c : Bool) =
-  new (b : Bools) Generator(b) in Debias(b,c)
+  new (b : Bools1) Generator1(b) in Debias(b,c)
